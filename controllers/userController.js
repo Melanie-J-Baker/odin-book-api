@@ -1,9 +1,25 @@
 const User = require("../models/user");
+const Post = require("../models/post");
+const Comment = require("../models/comment");
 const asyncHandler = require("express-async-handler");
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
+
+// Welcome page with counts of users, conversations and messages
+exports.index = asyncHandler(async (req, res, next) => {
+  const [numUsers, numPosts, numComments] = await Promise.all([
+    User.countDocuments({}).exec(),
+    Post.countDocuments({}).exec(),
+    Comment.countDocuments({}).exec(),
+  ]);
+  res.json({
+    numberOfUsers: numUsers,
+    numberOfPosts: numPosts,
+    numberOfComments: numComments,
+  });
+});
 
 // Handle User signup on POST
 exports.user_signup_post = asyncHandler(async (req, res, next) => [
