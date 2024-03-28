@@ -2,18 +2,24 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const Schema = mongoose.Schema;
 
-const UserSchema = new Schema({
-  username: { type: String, required: true, minLength: 4, maxLength: 30 },
-  first_name: { type: String, required: true, maxLength: 100 },
-  last_name: { type: String, required: true, maxLength: 100 },
-  email: { type: String, required: true },
-  password: { type: String, required: true },
-  following: {
-    type: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    required: false,
+const UserSchema = new Schema(
+  {
+    username: { type: String, required: true, minLength: 4, maxLength: 30 },
+    first_name: { type: String, required: true, maxLength: 100 },
+    last_name: { type: String, required: true, maxLength: 100 },
+    email: { type: String, required: true },
+    password: { type: String, required: true },
+    following: {
+      type: [{ type: Schema.Types.ObjectId, ref: "User" }],
+      required: false,
+    },
+    profile_image: { type: String, required: false },
   },
-  profile_image: { type: String, required: false },
-});
+  {
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true },
+  }
+);
 
 UserSchema.virtual("name").get(function () {
   let fullname = "";

@@ -17,8 +17,6 @@ passport.use(
         const user = await User.create({
           username,
           password,
-          first_name: req.body.first_name,
-          last_name: req.body.last_name,
         });
         return done(null, user);
       } catch (error) {

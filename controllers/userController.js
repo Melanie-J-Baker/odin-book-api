@@ -22,7 +22,7 @@ exports.index = asyncHandler(async (req, res, next) => {
 });
 
 // Handle User signup on POST
-exports.user_signup_post = asyncHandler(async (req, res, next) => [
+exports.user_signup_post = [
   body("username", "Username is not valid")
     .trim()
     .isLength({ min: 4, max: 30 })
@@ -70,6 +70,7 @@ exports.user_signup_post = asyncHandler(async (req, res, next) => [
             email: req.body.email,
             password: hashedPassword,
             profile_image: req.body.profile_image,
+            date_of_birth: req.body.date_of_birth,
           });
           const userExists = await User.findOne({
             username: req.body.username,
@@ -87,7 +88,7 @@ exports.user_signup_post = asyncHandler(async (req, res, next) => [
       });
     }
   }),
-]);
+];
 
 // Handle User login on POST
 exports.user_login_post = asyncHandler(async (req, res, next) => {
@@ -151,7 +152,10 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
     res.json({ error: "User not found" });
     return next(err);
   }
-  res.json(user);
+  const posts = await Post.find({ user: req.params.userid })
+    .populate("likes")
+    .exec();
+  res.json({ user: user, posts: posts });
 });
 
 // Handle User update on PUT
