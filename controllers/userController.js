@@ -132,7 +132,7 @@ exports.user_logout_post = asyncHandler(async (req, res, next) => {
   };
 });
 
-// Display a list of all Users
+// Return a list of all Users
 exports.user_list = asyncHandler(async (req, res, next) => {
   const allUsers = await User.find(
     {},
@@ -143,7 +143,7 @@ exports.user_list = asyncHandler(async (req, res, next) => {
   res.json(allUsers);
 });
 
-// Display detail page for a specific User
+// Return details for a specific User
 exports.user_detail = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.params.userid)
     .populate("following")
@@ -158,8 +158,34 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
   res.json({ user: user, posts: posts });
 });
 
+// Return list of users not followed by a specific User
+exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
+  const currentUser = await User.findById(req.params.userid).exec();
+  const allUsers = await User.find({}).sort({ username: 1 }).exec();
+  const notFollowedUsers = allUsers.filter(function (user) {
+    return !currentUser.following.includes(user._id);
+  });
+  res.json({ users: notFollowedUsers });
+});
+
+// List of feed posts for a specific user
+exports.user_feed_get = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.params.userid)
+    .populate("following")
+    .exec();
+  if (user === null) {
+    res.json({ error: "User not found" });
+    return next(err);
+  }
+  const feedPosts = user.following.forEach(
+    async (followedUserId) =>
+      await Post.find({ user: followedUserId }).populate("likes").exec()
+  );
+  res.json({ user: user, feedPosts: feedPosts });
+});
+
 // Handle User update on PUT
-exports.user_update_put = asyncHandler(async (req, res, next) => [
+exports.user_update_put = [
   body("username", "Username is not valid")
     .trim()
     .isLength({ min: 4, max: 30 })
@@ -190,7 +216,7 @@ exports.user_update_put = asyncHandler(async (req, res, next) => [
   }),
   asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
-    // Create User with validated and sanitised data
+    // Update User with validated and sanitised data
     if (!errors.isEmpty()) {
       res.json({ error: errors.array() });
       return;
@@ -215,7 +241,7 @@ exports.user_update_put = asyncHandler(async (req, res, next) => [
           if (userExists) {
             res.json({ error: "Username already in use" });
           } else {
-            await user.save();
+            await User.findByIdAndUpdate(req.params.id, user, {}).exec();
             res.json({
               status: "User details updated successfully",
               user: user,
@@ -225,7 +251,20 @@ exports.user_update_put = asyncHandler(async (req, res, next) => [
       });
     }
   }),
-]);
+];
+
+// Handle adding User to Following
+exports.user_addfriend_put = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.params.userid)
+    .populate("following")
+    .exec();
+  user.following.push(req.body.following);
+  await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+  res.json({
+    message: "Follow request successful",
+    following: user.following,
+  });
+});
 
 // Handle User DELETE
 exports.user_delete = asyncHandler(async (req, res, next) => {
@@ -240,7 +279,7 @@ exports.user_delete = asyncHandler(async (req, res, next) => {
     res.json({ error: "User not found" });
   }
   if (allPosts) {
-    await Posts.deleteMany({ user: req.params.userid }).exec();
+    await allPosts.deleteMany({ user: req.params.userid }).exec();
   }
   if (allCommentsOnPosts) {
     allPosts.forEach(async (post) => {

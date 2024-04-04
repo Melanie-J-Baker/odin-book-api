@@ -28,11 +28,29 @@ router.get(
   passport.authenticate("jwt", { session: false }),
   user_controller.user_detail
 );
+// List of not followed users for a specific user
+router.get(
+  "/users/:userid/userslist",
+  passport.authenticate("jwt", { session: false }),
+  user_controller.user_addfriend_list
+);
+// Get feed for a user
+router.get(
+  "/users/:userid/feed",
+  passport.authenticate("jwt", { session: false }),
+  user_controller.user_feed_get
+);
 // Update a user
 router.put(
   "/users/:userid",
   passport.authenticate("jwt", { session: false }),
   user_controller.user_update_put
+);
+//Add user to following array
+router.put(
+  "/users/:userid/addfriend",
+  passport.authenticate("jwt", { session: false }),
+  user_controller.user_addfriend_put
 );
 // Delete a user
 router.delete(
