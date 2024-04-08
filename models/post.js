@@ -12,6 +12,7 @@ const PostSchema = new Schema(
       required: false,
     },
     post_image: { type: String, required: false },
+    comments: { type: Array, required: false },
   },
   {
     toObject: { virtuals: true },

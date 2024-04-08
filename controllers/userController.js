@@ -105,7 +105,7 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
           username: user.username,
         };
         const token = jwt.sign({ user: body }, "TOP_SECRET", {
-          expiresIn: "2h",
+          expiresIn: "12h",
         });
         return res.json({ token: token, user: user });
       });
@@ -163,25 +163,11 @@ exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   const allUsers = await User.find({}).sort({ username: 1 }).exec();
   const notFollowedUsers = allUsers.filter(function (user) {
-    return !currentUser.following.includes(user._id);
+    return (
+      user._id != req.params.userid && !currentUser.following.includes(user._id)
+    );
   });
   res.json({ users: notFollowedUsers });
-});
-
-// List of feed posts for a specific user
-exports.user_feed_get = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.params.userid)
-    .populate("following")
-    .exec();
-  if (user === null) {
-    res.json({ error: "User not found" });
-    return next(err);
-  }
-  const feedPosts = user.following.forEach(
-    async (followedUserId) =>
-      await Post.find({ user: followedUserId }).populate("likes").exec()
-  );
-  res.json({ user: user, feedPosts: feedPosts });
 });
 
 // Handle User update on PUT
@@ -258,12 +244,16 @@ exports.user_addfriend_put = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.params.userid)
     .populate("following")
     .exec();
-  user.following.push(req.body.following);
-  await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
-  res.json({
-    message: "Follow request successful",
-    following: user.following,
-  });
+  if (user.following.contains(req.body.following)) {
+    return res.json({ message: "Already following user" });
+  } else {
+    user.following.push(req.body.following);
+    await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+    res.json({
+      message: "Follow request successful",
+      following: user.following,
+    });
+  }
 });
 
 // Handle User DELETE

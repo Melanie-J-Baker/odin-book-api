@@ -44,7 +44,7 @@ exports.comment_create_post = [
       });
       await comment.save();
       res.json({
-        status: "Comment created successfully",
+        status: "Comment created",
         comment: comment,
       });
     }
@@ -70,17 +70,53 @@ exports.comment_update_put = [
         text: req.body.text,
         timestamp: Date.now(),
         comment_image: req.body.comment_image,
-        likes: [],
         _id: req.params.commentid, // update Comment instead of creating new one
       });
       await Comment.findByIdAndUpdate(req.params.commentid, comment, {});
       res.json({
-        status: "Comment updated successfully",
+        status: "Comment updated",
         comment: comment,
       });
     }
   }),
 ];
+
+// Handle adding/removing Comment Like
+exports.comment_like_put = asyncHandler(async (req, res, next) => {
+  const comment = await Comment.findById(req.params.commentid).exec();
+  if (comment.likes.includes(req.body.likes)) {
+    const index = comment.likes.indexOf(req.body.likes);
+    if (index !== -1) {
+      comment.likes.splice(index, 1);
+    }
+    const newComment = await Comment.findByIdAndUpdate(
+      req.params.commentid,
+      comment,
+      {}
+    )
+      .populate("likes")
+      .exec();
+    return res.json({
+      message: "Comment liked",
+      comment: newComment,
+      likedby: req.body.likes,
+    });
+  } else {
+    comment.likes.push(req.body.likes);
+    const newComment = await Comment.findByIdAndUpdate(
+      req.params.commentid,
+      comment,
+      {}
+    )
+      .populate("likes")
+      .exec();
+    res.json({
+      message: "Comment unliked",
+      comment: newComment,
+      unlikedby: req.body.likes,
+    });
+  }
+});
 
 // Handle Comment DELETE
 exports.comment_delete = asyncHandler(async (req, res, next) => {

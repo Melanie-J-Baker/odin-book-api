@@ -256,7 +256,7 @@ async function createComments() {
       users[1],
       posts[5],
       faker.lorem.paragraph(),
-      faker.image.url,
+      faker.image.url(),
       [users[2], users[0]]
     ),
     commentCreate(5, users[3], posts[7], faker.lorem.sentences(2), "", [
