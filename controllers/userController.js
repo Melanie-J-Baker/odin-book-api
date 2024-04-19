@@ -316,7 +316,7 @@ exports.user_delete = asyncHandler(async (req, res, next) => {
     res.json({ error: "User not found" });
   }
   if (allPosts) {
-    await allPosts.deleteMany({ user: req.params.userid }).exec();
+    await Post.deleteMany({ user: req.params.userid }).exec();
   }
   if (allCommentsOnPosts) {
     allPosts.forEach(async (post) => {
