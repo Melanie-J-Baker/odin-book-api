@@ -6,7 +6,6 @@ const { body, validationResult } = require("express-validator");
 exports.comment_list = asyncHandler(async (req, res, next) => {
   const allComments = await Comment.find({ post: req.params.postid })
     .populate("user")
-    .populate("likes")
     .sort({ timestamp: -1 })
     .exec();
   res.json(allComments);
@@ -16,7 +15,6 @@ exports.comment_list = asyncHandler(async (req, res, next) => {
 exports.comment_detail = asyncHandler(async (req, res, next) => {
   const comment = await Comment.findById(req.params.commentid)
     .populate("user")
-    .populate("likes")
     .exec();
   res.json(comment);
 });
@@ -84,8 +82,8 @@ exports.comment_update_put = [
 // Handle adding/removing Comment Like
 exports.comment_like_put = asyncHandler(async (req, res, next) => {
   const comment = await Comment.findById(req.params.commentid).exec();
-  if (comment.likes.includes(req.body.likes)) {
-    const index = comment.likes.indexOf(req.body.likes);
+  if (comment.likes.includes(req.body.liked)) {
+    const index = comment.likes.indexOf(req.body.liked);
     if (index !== -1) {
       comment.likes.splice(index, 1);
     }
@@ -93,13 +91,11 @@ exports.comment_like_put = asyncHandler(async (req, res, next) => {
       req.params.commentid,
       comment,
       {}
-    )
-      .populate("likes")
-      .exec();
+    ).exec();
     return res.json({
-      message: "Comment liked",
+      message: "Comment unliked",
       comment: newComment,
-      likedby: req.body.likes,
+      unlikedby: req.body.liked,
     });
   } else {
     comment.likes.push(req.body.likes);
@@ -107,13 +103,11 @@ exports.comment_like_put = asyncHandler(async (req, res, next) => {
       req.params.commentid,
       comment,
       {}
-    )
-      .populate("likes")
-      .exec();
+    ).exec();
     res.json({
-      message: "Comment unliked",
+      message: "Comment liked",
       comment: newComment,
-      unlikedby: req.body.likes,
+      likedby: req.body.liked,
     });
   }
 });

@@ -69,7 +69,6 @@ exports.user_signup_post = [
             last_name: req.body.last_name,
             email: req.body.email,
             password: hashedPassword,
-            profile_image: req.body.profile_image,
             date_of_birth: req.body.date_of_birth,
           });
           const userExists = await User.findOne({
@@ -117,19 +116,17 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
 
 // Handle User logout on POST
 exports.user_logout_post = asyncHandler(async (req, res, next) => {
-  exports.user_logout_post = (req, res, next) => {
-    res.clearCookie("connect.sid"); // clear the session cookie
-    req.logout((err) => {
-      if (err) {
-        return next(err);
-      }
-      req.session.destroy(function (err) {
-        // destroy the session
-        res.send(); // send to the client
-      });
-      res.json({ message: "You are now logged out" });
+  res.clearCookie("connect.sid"); // clear the session cookie
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    req.session.destroy(function (err) {
+      // destroy the session
+      res.send(); // send to the client
     });
-  };
+    res.json({ message: "You are now logged out" });
+  });
 });
 
 // Return a list of all Users
@@ -185,16 +182,59 @@ exports.user_update_put = [
     .isLength({ min: 1, max: 100 })
     .escape(),
   body("email", "Email is required").trim().isLength({ min: 1 }),
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    // Update User with validated and sanitised data
+    if (!errors.isEmpty()) {
+      res.json({ error: errors.array() });
+      return;
+    } else {
+      const user = new User({
+        username: req.body.username,
+        first_name: req.body.first_name,
+        last_name: req.body.last_name,
+        email: req.body.email,
+        _id: req.params.userid, // Required to update user and not create
+      });
+      const userExists = await User.findOne({
+        username: req.body.username,
+      }).exec();
+      if (userExists) {
+        res.json({ status: "Username already in use" });
+      } else {
+        await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+        res.json({
+          status: "Profile updated successfully",
+          user: user,
+        });
+      }
+    }
+  }),
+];
+
+// Handle profile image
+exports.user_profileimage_put = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.params.userid).exec();
+  user.profile_image = req.body.profile_image;
+  await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+  res.json({
+    status: "Profile image updated",
+    user: user,
+  });
+});
+
+// Handle change password
+exports.user_changepassword_put = [
   body(
-    "password",
+    "newPassword",
     "Password must contain at least 8 characters (At least one uppercase letter, one lowercase letter and one number"
   )
     .trim()
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/)
     .isLength({ min: 8 })
     .escape(),
-  body("password_confirm").custom(async (password_confirm, { req }) => {
-    const password = req.body.password;
+  body("confirmPassword").custom(async (password_confirm, { req }) => {
+    const password = req.body.newPassword;
     // If passwords do not match throw error
     if (password !== password_confirm) {
       throw new Error("Passwords do not match");
@@ -207,51 +247,58 @@ exports.user_update_put = [
       res.json({ error: errors.array() });
       return;
     } else {
-      bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
-        if (err) {
-          res.json({ error: err });
-          return;
-        } else {
-          const user = new User({
-            username: req.body.username,
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            email: req.body.email,
-            password: hashedPassword,
-            profile_image: req.body.profile_image,
-            _id: req.params.userid, // Required to update user and not create
-          });
-          const userExists = await User.findOne({
-            username: req.body.username,
-          }).exec();
-          if (userExists) {
-            res.json({ error: "Username already in use" });
+      const user = await User.findById(req.params.userid);
+      const validate = await user.isValidPassword(req.body.currentPassword);
+      if (validate) {
+        bcrypt.hash(req.body.newPassword, 10, async (err, hashedPassword) => {
+          if (err) {
+            res.json({ message: err.message });
+            return;
           } else {
-            await User.findByIdAndUpdate(req.params.id, user, {}).exec();
+            const user = new User({
+              password: hashedPassword,
+              _id: req.params.userid, // Required to update user and not create
+            });
+            await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
             res.json({
-              status: "User details updated successfully",
+              message: "Password changed successfully",
               user: user,
             });
           }
-        }
-      });
+        });
+      }
     }
   }),
 ];
 
-// Handle adding User to Following
-exports.user_addfriend_put = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.params.userid)
-    .populate("following")
-    .exec();
-  if (user.following.contains(req.body.following)) {
-    return res.json({ message: "Already following user" });
+// Handle adding/removing Friend
+exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
+  const currentUser = await User.findById(req.params.userid).exec();
+  if (currentUser.following.includes(req.body.toFollow)) {
+    const index = currentUser.following.indexOf(req.body.toFollow);
+    if (index !== -1) {
+      currentUser.following.splice(index, 1);
+    }
+    await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
+    return res.json({
+      message: "Friend removed",
+      user: req.body.toFollow,
+      following: currentUser.following,
+    });
   } else {
-    user.following.push(req.body.following);
-    await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+    currentUser.following.push(req.body.toFollow);
+    await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
+    const allUsers = await User.find({}).sort({ username: 1 }).exec();
+    const notFollowedUsers = allUsers.filter(function (user) {
+      return (
+        user._id != req.params.userid &&
+        !currentUser.following.includes(user._id)
+      );
+    });
     res.json({
       message: "Follow request successful",
-      following: user.following,
+      following: currentUser.following,
+      notFollowing: notFollowedUsers,
     });
   }
 });

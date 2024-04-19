@@ -23,10 +23,10 @@ const app = express();
 //let cache = apicache.middleware;
 //app.use(cache("10 minutes")); // cache results for 5 mins
 
-// Set up rate limiter: max of 20 reqs per min
+// Set up rate limiter: max of 100 reqs per min
 const limiter = RateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 40,
+  max: 100,
 });
 
 const mongoose = require("mongoose");
@@ -41,8 +41,8 @@ app.use(limiter);
 app.use(helmet());
 app.use(compression()); //compress all routes
 app.use(logger("dev"));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: false, limit: "100mb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 

@@ -1,14 +1,28 @@
 const Post = require("../models/post");
 const User = require("../models/user");
+const Comment = require("../models/comment");
 const asyncHandler = require("express-async-handler");
 const { body, validationResult } = require("express-validator");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
+
+async function handleUpload(file) {
+  const res = await cloudinary.uploader.upload(file, {
+    resource_type: "auto",
+  });
+  return res;
+}
 
 // Display a list of all Posts by a User
 exports.post_list = asyncHandler(async (req, res, next) => {
   const allPosts = await Post.find({ user: req.params.userid })
     .populate("user")
-    .populate("likes")
-    .sort({ timestamp: 1 })
+    .sort({ timestamp: -1 })
     .exec();
   res.json(allPosts);
 });
@@ -23,18 +37,16 @@ exports.post_feed_get = asyncHandler(async (req, res, next) => {
     res.json({ error: "User not found" });
     return next(err);
   }
-  //const feedUsers = user.following.push(req.params.userid);
   for (const followedUserId of user.following) {
     const feedPosts = await Post.find({ user: followedUserId })
       .sort({ timestamp: -1 })
-      .populate("likes")
       .populate("user")
       .exec();
     feedPosts.forEach((post) => {
       allFeedPosts.push(post);
     });
     allFeedPosts.sort((p1, p2) =>
-      p1.timestamp > p2.timestamp ? 1 : p1.timestamp < p2.timestamp ? -1 : 0
+      p1.timestamp < p2.timestamp ? 1 : p1.timestamp > p2.timestamp ? -1 : 0
     );
   }
   res.json({ user: user, feedPosts: allFeedPosts });
@@ -43,7 +55,7 @@ exports.post_feed_get = asyncHandler(async (req, res, next) => {
 // Send details for a specific Post
 exports.post_detail = asyncHandler(async (req, res, next) => {
   const post = await Post.findById(req.params.postid).populate("user").exec();
-  res.json({ post });
+  res.json(post);
 });
 
 // Handle Post create on POST
@@ -55,7 +67,7 @@ exports.post_create_post = [
   // Process request after validation and sanitization
   asyncHandler(async (req, res, next) => {
     // Extract validation errors from request
-    const errors = validationResult(req);
+    const errors = validationResult(req.body);
     if (!errors.isEmpty()) {
       res.json({ error: errors.array() });
     } else {
@@ -64,7 +76,6 @@ exports.post_create_post = [
         text: req.body.text,
         timestamp: Date.now(),
         likes: [],
-        post_image: req.body.post_image,
       });
       await post.save();
       res.json({
@@ -92,7 +103,6 @@ exports.post_update_put = [
         user: req.params.userid,
         text: req.body.text,
         timestamp: Date.now(),
-        post_image: req.body.post_image,
         _id: req.params.postid, // update Post instead of creating new one
       });
       await Post.findByIdAndUpdate(req.params.postid, post, {});
@@ -104,6 +114,28 @@ exports.post_update_put = [
   }),
 ];
 
+//Handle Post image
+exports.post_image_put = asyncHandler(async (req, res, next) => {
+  /*try {
+        const b64 = Buffer.from(req.file.buffer).toString("base64");
+        let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+        const cldRes = await handleUpload(dataURI);
+        return cldRes;
+      } catch (error) {
+        console.log(error);
+        res.send({
+          message: error.message,
+        });
+      }*/
+  const post = await Post.findById(req.params.postid).exec();
+  post.post_image = req.body.post_image;
+  await Post.findByIdAndUpdate(req.params.postid, post, {}).exec();
+  res.json({
+    message: "Post image updated",
+    post: post,
+  });
+});
+
 // Handle adding/removing Post Like
 exports.post_like_put = asyncHandler(async (req, res, next) => {
   const post = await Post.findById(req.params.postid).exec();
@@ -112,19 +144,27 @@ exports.post_like_put = asyncHandler(async (req, res, next) => {
     if (index !== -1) {
       post.likes.splice(index, 1);
     }
-    await Post.findByIdAndUpdate(req.params.postid, post, {}).exec();
+    const newPost = await Post.findByIdAndUpdate(
+      req.params.postid,
+      post,
+      {}
+    ).exec();
     return res.json({
-      message: "Post unliked",
-      post: post,
-      unlikedby: req.body.likes,
+      message: "Post liked",
+      post: newPost,
+      likedby: req.body.likes,
     });
   } else {
     post.likes.push(req.body.likes);
-    await Post.findByIdAndUpdate(req.params.postid, post, {}).exec();
+    const newPost = await Post.findByIdAndUpdate(
+      req.params.postid,
+      post,
+      {}
+    ).exec();
     res.json({
-      message: "Post liked",
-      post: post,
-      likedby: req.body.likes,
+      message: "Post unliked",
+      post: newPost,
+      unlikedby: req.body.likes,
     });
   }
 });
@@ -133,11 +173,19 @@ exports.post_like_put = asyncHandler(async (req, res, next) => {
 exports.post_delete = asyncHandler(async (req, res, next) => {
   const post = await Post.findById(req.params.postid).exec();
   if (post === null) {
-    res.json({ error: "Post not found" });
+    res.json({ message: "Post not found" });
+  } else {
+    await Post.findByIdAndDelete(req.params.postid).exec();
+    const allCommentsOnPost = await Comment.find({
+      post: req.params.postid,
+    }).exec();
+    if (allCommentsOnPost) {
+      await allCommentsOnPost.deleteMany({ post: req.params.postid }).exec();
+    }
+    res.json({
+      message: "Post and associated comments deleted",
+      post: post,
+      allCommentsOnPost: allCommentsOnPost,
+    });
   }
-  await Post.findByIdAndDelete(req.params.postid).exec();
-  res.json({
-    message: "Post deleted",
-    post: post,
-  });
 });

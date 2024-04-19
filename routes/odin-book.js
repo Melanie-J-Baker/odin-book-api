@@ -6,6 +6,12 @@ const user_controller = require("../controllers/userController");
 const post_controller = require("../controllers/postController");
 const comment_controller = require("../controllers/commentController");
 
+const multer = require("multer");
+const storage = new multer.memoryStorage();
+const upload = multer({
+  storage,
+});
+
 // USER ROUTES
 
 // Get index (counts of users, posts and comments)
@@ -48,11 +54,26 @@ router.put(
   user_controller.user_update_put
 );
 
+// Handle profile image
+router.put(
+  "/users/:userid/newprofileimage",
+  passport.authenticate("jwt", { session: false }),
+  upload.single("profileImage"),
+  user_controller.user_profileimage_put
+);
+
+// Handle change password
+router.put(
+  "/users/:userid/changePassword",
+  passport.authenticate("jwt", { session: false }),
+  user_controller.user_changepassword_put
+);
+
 //Add user to following array
 router.put(
-  "/users/:userid/addfriend",
+  "/users/:userid/addfollow",
   passport.authenticate("jwt", { session: false }),
-  user_controller.user_addfriend_put
+  user_controller.user_addfollow_put
 );
 
 // Delete a user
@@ -80,7 +101,7 @@ router.get(
 
 // Get details of a specific post
 router.get(
-  "/users/:userid/posts/:postid",
+  "/posts/:postid",
   passport.authenticate("jwt", { session: false }),
   post_controller.post_detail
 );
@@ -89,6 +110,7 @@ router.get(
 router.post(
   "/users/:userid/posts",
   passport.authenticate("jwt", { session: false }),
+  /*upload.single("postImage")*/
   post_controller.post_create_post
 );
 
@@ -97,6 +119,14 @@ router.put(
   "/users/:userid/posts/:postid",
   passport.authenticate("jwt", { session: false }),
   post_controller.post_update_put
+);
+
+// Handle post image
+router.put(
+  "/users/:userid/posts/:postid/uploadimage",
+  passport.authenticate("jwt", { session: false }),
+  upload.single("postImage"),
+  post_controller.post_image_put
 );
 
 // Handle adding/removing Post Like
@@ -108,7 +138,7 @@ router.put(
 
 // Delete a post
 router.delete(
-  "/users/:userid/posts/:postid",
+  "/posts/:postid",
   passport.authenticate("jwt", { session: false }),
   post_controller.post_delete
 );
