@@ -174,18 +174,17 @@ exports.post_delete = asyncHandler(async (req, res, next) => {
   const post = await Post.findById(req.params.postid).exec();
   if (post === null) {
     res.json({ message: "Post not found" });
-  } else {
-    await Post.findByIdAndDelete(req.params.postid).exec();
-    const allCommentsOnPost = await Comment.find({
-      post: req.params.postid,
-    }).exec();
-    if (allCommentsOnPost) {
-      await allCommentsOnPost.deleteMany({ post: req.params.postid }).exec();
-    }
-    res.json({
-      message: "Post and associated comments deleted",
-      post: post,
-      allCommentsOnPost: allCommentsOnPost,
-    });
   }
+  const allCommentsOnPost = await Comment.find({
+    post: req.params.postid,
+  }).exec();
+  if (allCommentsOnPost) {
+    await Post.deleteMany({ post: req.params.postid }).exec();
+  }
+  await Post.findByIdAndDelete(req.params.postid).exec();
+  res.json({
+    message: "Post and associated comments deleted",
+    post: post,
+    allCommentsOnPost: allCommentsOnPost,
+  });
 });

@@ -6,6 +6,20 @@ const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
+
+async function handleUpload(file) {
+  const res = await cloudinary.uploader.upload(file, {
+    resource_type: "auto",
+  });
+  return res;
+}
 
 // Welcome page with counts of users, conversations and messages
 exports.index = asyncHandler(async (req, res, next) => {
@@ -196,11 +210,20 @@ exports.user_update_put = [
         email: req.body.email,
         _id: req.params.userid, // Required to update user and not create
       });
-      const userExists = await User.findOne({
-        username: req.body.username,
-      }).exec();
-      if (userExists) {
-        res.json({ status: "Username already in use" });
+      const currentUser = await User.findById(req.params.userid).exec();
+      if (currentUser.username !== req.body.username) {
+        const userExists = await User.findOne({
+          username: req.body.username,
+        }).exec();
+        if (userExists) {
+          res.json({ status: "Username already in use" });
+        } else {
+          await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+          res.json({
+            status: "Profile updated successfully",
+            user: user,
+          });
+        }
       } else {
         await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
         res.json({
@@ -215,12 +238,23 @@ exports.user_update_put = [
 // Handle profile image
 exports.user_profileimage_put = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.params.userid).exec();
-  user.profile_image = req.body.profile_image;
-  await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
-  res.json({
-    status: "Profile image updated",
-    user: user,
-  });
+  try {
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+    const cldRes = await handleUpload(dataURI);
+    user.profile_image = cldRes.secure_url;
+    await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+    res.json({
+      status: "Profile image updated",
+      user: user,
+      cldRes: cldRes.secure_url,
+    });
+  } catch (error) {
+    console.log(error);
+    res.send({
+      message: error.message,
+    });
+  }
 });
 
 // Handle change password

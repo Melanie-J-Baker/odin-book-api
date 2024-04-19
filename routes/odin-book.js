@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("passport");
+const Multer = require("multer");
 // Require controller modules
 const user_controller = require("../controllers/userController");
 const post_controller = require("../controllers/postController");
 const comment_controller = require("../controllers/commentController");
 
-const multer = require("multer");
-const storage = new multer.memoryStorage();
-const upload = multer({
+const storage = new Multer.memoryStorage();
+const upload = Multer({
   storage,
 });
 
