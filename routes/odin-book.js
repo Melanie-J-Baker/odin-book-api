@@ -106,6 +106,13 @@ router.get(
   post_controller.post_detail
 );
 
+// Get likes with user details of a specific post
+router.get(
+  "/posts/:postid/likes",
+  passport.authenticate("jwt", { session: false }),
+  post_controller.post_likes_list
+);
+
 // Create a new post
 router.post(
   "/users/:userid/posts",
@@ -156,6 +163,13 @@ router.get(
   "/comments/:commentid",
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_detail
+);
+
+// Get likes with user details of a specific comment
+router.get(
+  "/comments/:commentid/likes",
+  passport.authenticate("jwt", { session: false }),
+  comment_controller.comment_likes_list
 );
 
 // Create a new comment

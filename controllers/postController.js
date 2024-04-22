@@ -18,7 +18,7 @@ async function handleUpload(file) {
   return res;
 }
 
-// Display a list of all Posts by a User
+// Return a list of all Posts by a User
 exports.post_list = asyncHandler(async (req, res, next) => {
   const allPosts = await Post.find({ user: req.params.userid })
     .populate("user")
@@ -65,6 +65,12 @@ exports.post_feed_get = asyncHandler(async (req, res, next) => {
 exports.post_detail = asyncHandler(async (req, res, next) => {
   const post = await Post.findById(req.params.postid).populate("user").exec();
   res.json(post);
+});
+
+// Return a list of likes on a Post with user details
+exports.post_likes_list = asyncHandler(async (req, res, next) => {
+  const post = await Post.findById(req.params.postid).populate("likes").exec();
+  res.json({ post: req.params.postid, likes: post.likes });
 });
 
 // Handle Post create on POST

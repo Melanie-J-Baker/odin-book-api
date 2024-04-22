@@ -33,6 +33,14 @@ exports.comment_detail = asyncHandler(async (req, res, next) => {
   res.json(comment);
 });
 
+// Return a list of likes on a Comment with user details
+exports.comment_likes_list = asyncHandler(async (req, res, next) => {
+  const comment = await Comment.findById(req.params.commentid)
+    .populate("likes")
+    .exec();
+  res.json({ comment: req.params.commentid, likes: comment.likes });
+});
+
 // Handle Comment create on POST
 exports.comment_create_post = [
   body("text", "Post not valid")
