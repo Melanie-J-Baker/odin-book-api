@@ -247,10 +247,9 @@ exports.user_profileimage_put = asyncHandler(async (req, res, next) => {
     res.json({
       status: "Profile image updated",
       user: user,
-      cldRes: cldRes.secure_url,
+      url: cldRes.secure_url,
     });
   } catch (error) {
-    console.log(error);
     res.send({
       message: error.message,
     });

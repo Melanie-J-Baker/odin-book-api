@@ -22,8 +22,10 @@ async function handleUpload(file) {
 exports.post_list = asyncHandler(async (req, res, next) => {
   const allPosts = await Post.find({ user: req.params.userid })
     .populate("user")
-    .sort({ timestamp: -1 })
     .exec();
+  allPosts.sort((p1, p2) =>
+    p1.timestamp < p2.timestamp ? 1 : p1.timestamp > p2.timestamp ? -1 : 0
+  );
   res.json(allPosts);
 });
 
@@ -37,6 +39,13 @@ exports.post_feed_get = asyncHandler(async (req, res, next) => {
     res.json({ error: "User not found" });
     return next(err);
   }
+  const allPostsByUser = await Post.find({ user: req.params.userid })
+    .populate("user")
+    .sort({ timestamp: -1 })
+    .exec();
+  allPostsByUser.forEach((post) => {
+    allFeedPosts.push(post);
+  });
   for (const followedUserId of user.following) {
     const feedPosts = await Post.find({ user: followedUserId })
       .sort({ timestamp: -1 })
@@ -116,24 +125,23 @@ exports.post_update_put = [
 
 //Handle Post image
 exports.post_image_put = asyncHandler(async (req, res, next) => {
-  /*try {
-        const b64 = Buffer.from(req.file.buffer).toString("base64");
-        let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
-        const cldRes = await handleUpload(dataURI);
-        return cldRes;
-      } catch (error) {
-        console.log(error);
-        res.send({
-          message: error.message,
-        });
-      }*/
   const post = await Post.findById(req.params.postid).exec();
-  post.post_image = req.body.post_image;
-  await Post.findByIdAndUpdate(req.params.postid, post, {}).exec();
-  res.json({
-    message: "Post image updated",
-    post: post,
-  });
+  try {
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+    const cldRes = await handleUpload(dataURI);
+    post.post_image = cldRes.secure_url;
+    await Post.findByIdAndUpdate(req.params.postid, post, {}).exec();
+    res.json({
+      status: "Post image uploaded",
+      post: post,
+      url: cldRes.secure_url,
+    });
+  } catch (error) {
+    res.send({
+      message: error.message,
+    });
+  }
 });
 
 // Handle adding/removing Post Like

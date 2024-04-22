@@ -1,12 +1,26 @@
 const Comment = require("../models/comment");
 const asyncHandler = require("express-async-handler");
 const { body, validationResult } = require("express-validator");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
+});
+
+async function handleUpload(file) {
+  const res = await cloudinary.uploader.upload(file, {
+    resource_type: "auto",
+  });
+  return res;
+}
 
 // Display a list of all Comments on a Post
 exports.comment_list = asyncHandler(async (req, res, next) => {
   const allComments = await Comment.find({ post: req.params.postid })
     .populate("user")
-    .sort({ timestamp: -1 })
+    .sort({ timestamp: 1 })
     .exec();
   res.json(allComments);
 });
@@ -34,10 +48,9 @@ exports.comment_create_post = [
     } else {
       const comment = new Comment({
         post: req.params.postid,
-        user: req.body.userid,
+        user: req.body.user,
         text: req.body.text,
         timestamp: Date.now(),
-        comment_image: req.body.comment_image,
         likes: [],
       });
       await comment.save();
@@ -48,6 +61,27 @@ exports.comment_create_post = [
     }
   }),
 ];
+
+//Handle Comment image
+exports.comment_image_put = asyncHandler(async (req, res, next) => {
+  const comment = await Comment.findById(req.params.commentid).exec();
+  try {
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+    const cldRes = await handleUpload(dataURI);
+    comment.comment_image = cldRes.secure_url;
+    await Comment.findByIdAndUpdate(req.params.commentid, comment, {}).exec();
+    res.json({
+      status: "Comment image uploaded",
+      comment: comment,
+      url: cldRes.secure_url,
+    });
+  } catch (error) {
+    res.send({
+      message: error.message,
+    });
+  }
+});
 
 // Handle Comment update on PUT
 exports.comment_update_put = [
@@ -98,7 +132,7 @@ exports.comment_like_put = asyncHandler(async (req, res, next) => {
       unlikedby: req.body.liked,
     });
   } else {
-    comment.likes.push(req.body.likes);
+    comment.likes.push(req.body.liked);
     const newComment = await Comment.findByIdAndUpdate(
       req.params.commentid,
       comment,

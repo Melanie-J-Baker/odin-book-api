@@ -110,7 +110,6 @@ router.get(
 router.post(
   "/users/:userid/posts",
   passport.authenticate("jwt", { session: false }),
-  /*upload.single("postImage")*/
   post_controller.post_create_post
 );
 
@@ -151,33 +150,46 @@ router.get(
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_list
 );
+
 // Get details of a specific comment on a post
 router.get(
   "/comments/:commentid",
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_detail
 );
+
 // Create a new comment
 router.post(
   "/posts/:postid/comments",
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_create_post
 );
+
+// Upload Comment image
+router.put(
+  "/comments/:commentid/uploadimage",
+  passport.authenticate("jwt", { session: false }),
+  upload.single("commentImage"),
+  comment_controller.comment_image_put
+);
+
 // Update a comment
 router.put(
-  "/posts/:postid/comments/:commentid",
+  "/comments/:commentid",
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_update_put
 );
+
 // Handle adding/removing Comment Like
 router.put(
   "/comments/:commentid",
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_like_put
 );
+
 // Delete a comment
 router.delete(
-  "/posts/:postid/comments/:commentid",
+  "/comments/:commentid",
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_delete
 );
