@@ -164,9 +164,9 @@ exports.post_like_put = asyncHandler(async (req, res, next) => {
       {}
     ).exec();
     return res.json({
-      message: "Post liked",
+      message: "Post unliked",
       post: newPost,
-      likedby: req.body.likes,
+      unlikedby: req.body.likes,
     });
   } else {
     post.likes.push(req.body.likes);
@@ -176,9 +176,9 @@ exports.post_like_put = asyncHandler(async (req, res, next) => {
       {}
     ).exec();
     res.json({
-      message: "Post unliked",
+      message: "Post liked",
       post: newPost,
-      unlikedby: req.body.likes,
+      likedby: req.body.likes,
     });
   }
 });

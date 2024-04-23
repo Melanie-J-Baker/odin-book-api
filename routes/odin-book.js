@@ -137,7 +137,7 @@ router.put(
 
 // Handle adding/removing Post Like
 router.put(
-  "/posts/:postid",
+  "/posts/:postid/like",
   passport.authenticate("jwt", { session: false }),
   post_controller.post_like_put
 );
@@ -196,7 +196,7 @@ router.put(
 
 // Handle adding/removing Comment Like
 router.put(
-  "/comments/:commentid",
+  "/comments/:commentid/like",
   passport.authenticate("jwt", { session: false }),
   comment_controller.comment_like_put
 );

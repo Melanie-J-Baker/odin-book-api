@@ -23,10 +23,10 @@ const app = express();
 //let cache = apicache.middleware;
 //app.use(cache("10 minutes")); // cache results for 5 mins
 
-// Set up rate limiter: max of 100 reqs per min
+// Set up rate limiter: max of 1000 reqs per min
 const limiter = RateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100,
+  max: 1000,
 });
 
 const mongoose = require("mongoose");
