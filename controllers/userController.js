@@ -158,6 +158,7 @@ exports.user_list = asyncHandler(async (req, res, next) => {
 exports.user_detail = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.params.userid)
     .populate("following")
+    .populate("requests")
     .exec();
   if (user === null) {
     res.json({ error: "User not found" });
@@ -169,7 +170,7 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
   res.json({ user: user, posts: posts });
 });
 
-// Return list of users not followed by a specific User
+// Return list of users not followed by a specific User and list of requests
 exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   const allUsers = await User.find({}).sort({ username: 1 }).exec();
@@ -178,7 +179,10 @@ exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
       user._id != req.params.userid && !currentUser.following.includes(user._id)
     );
   });
-  res.json({ users: notFollowedUsers });
+  res.json({
+    users: notFollowedUsers,
+    requests: currentUser.requests,
+  });
 });
 
 // Handle User update on PUT
@@ -304,7 +308,50 @@ exports.user_changepassword_put = [
   }),
 ];
 
-// Handle adding/removing Friend
+// Handle send follow request
+exports.user_followrequest_put = asyncHandler(async (req, res, next) => {
+  const currentUser = await User.findById(req.params.userid).exec();
+  if (currentUser.following.includes(req.body.toFollow)) {
+    return res.json({
+      message: "Already following user",
+      user: req.body.toFollow,
+      requests: currentUser.requests,
+    });
+  } else if (currentUser.requests.includes(req.body.toFollow)) {
+    return res.json({
+      message: "Follow request already sent",
+      user: req.body.toFollow,
+      requests: currentUser.requests,
+    });
+  } else {
+    currentUser.requests.push(req.body.toFollow);
+    await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
+    return res.json({
+      message: "Friend request sent",
+      user: req.body.toFollow,
+      requests: currentUser.requests,
+    });
+  }
+});
+
+// Handle removing follow request
+exports.user_removerequest_put = asyncHandler(async (req, res, next) => {
+  const currentUser = await User.findById(req.params.userid).exec();
+  if (currentUser.requests.includes(req.body.removeid)) {
+    const index = currentUser.requests.indexOf(req.body.removeid);
+    if (index !== -1) {
+      currentUser.requests.splice(index, 1);
+    }
+    await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
+    return {
+      message: "Friend request removed",
+      user: req.body.remove,
+      newRequests: currentUser.requests,
+    };
+  }
+});
+
+// Handle adding/removing follow
 exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   if (currentUser.following.includes(req.body.toFollow)) {

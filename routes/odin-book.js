@@ -69,6 +69,20 @@ router.put(
   user_controller.user_changepassword_put
 );
 
+// Send follow request
+router.put(
+  "/users/:userid/followrequest",
+  passport.authenticate("jwt", { session: false }),
+  user_controller.user_followrequest_put
+);
+
+// Remove follow request
+router.put(
+  "/users/:userid/removerequest",
+  passport.authenticate("jwt", { session: false }),
+  user_controller.user_removerequest_put
+);
+
 //Add user to following array
 router.put(
   "/users/:userid/addfollow",
