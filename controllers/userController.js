@@ -170,7 +170,7 @@ exports.user_detail = asyncHandler(async (req, res, next) => {
   res.json({ user: user, posts: posts });
 });
 
-// Return list of users not followed by a specific User and list of requests
+// Return list of users not followed by a specific User
 exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   const allUsers = await User.find({}).sort({ username: 1 }).exec();
@@ -181,7 +181,6 @@ exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
   });
   res.json({
     users: notFollowedUsers,
-    requests: currentUser.requests,
   });
 });
 
@@ -311,32 +310,30 @@ exports.user_changepassword_put = [
 // Handle send follow request
 exports.user_followrequest_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
+  const toFollowUser = await User.findById(req.body.toFollow).exec();
   if (currentUser.following.includes(req.body.toFollow)) {
     return res.json({
       message: "Already following user",
       user: req.body.toFollow,
-      requests: currentUser.requests,
     });
-  } else if (currentUser.requests.includes(req.body.toFollow)) {
+  } else if (toFollowUser.requests.includes(req.params.userid)) {
     return res.json({
       message: "Follow request already sent",
       user: req.body.toFollow,
-      requests: currentUser.requests,
     });
   } else {
-    currentUser.requests.push(req.body.toFollow);
-    await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
+    toFollowUser.requests.push(currentUser);
+    await User.findByIdAndUpdate(req.body.toFollow, toFollowUser, {}).exec();
     return res.json({
       message: "Friend request sent",
       user: req.body.toFollow,
-      requests: currentUser.requests,
     });
   }
 });
 
 // Handle removing follow request
 exports.user_removerequest_put = asyncHandler(async (req, res, next) => {
-  const currentUser = await User.findById(req.params.userid).exec();
+  const User = await User.findById(req.params.userid).exec();
   if (currentUser.requests.includes(req.body.removeid)) {
     const index = currentUser.requests.indexOf(req.body.removeid);
     if (index !== -1) {
@@ -367,6 +364,10 @@ exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
     });
   } else {
     currentUser.following.push(req.body.toFollow);
+    const index = currentUser.requests.indexOf(req.body.toFollow);
+    if (index !== -1) {
+      currentUser.requests.splice(index, 1);
+    }
     await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
     const allUsers = await User.find({}).sort({ username: 1 }).exec();
     const notFollowedUsers = allUsers.filter(function (user) {
@@ -379,6 +380,7 @@ exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
       message: "Follow request successful",
       following: currentUser.following,
       notFollowing: notFollowedUsers,
+      user: req.body.toFollow,
     });
   }
 });
