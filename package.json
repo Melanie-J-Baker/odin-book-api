@@ -33,7 +33,10 @@
     "passport-local": "^1.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.2.0",
     "@faker-js/faker": "^8.4.1",
+    "eslint": "^9.2.0",
+    "globals": "^15.2.0",
     "nodemon": "^3.1.0"
   }
 }

@@ -17,7 +17,7 @@ async function handleUpload(file) {
 }
 
 // Display a list of all Comments on a Post
-exports.comment_list = asyncHandler(async (req, res, next) => {
+exports.comment_list = asyncHandler(async (req, res) => {
   const allComments = await Comment.find({ post: req.params.postid })
     .populate("user")
     .sort({ timestamp: 1 })
@@ -26,7 +26,7 @@ exports.comment_list = asyncHandler(async (req, res, next) => {
 });
 
 // Send details for a specific Comment
-exports.comment_detail = asyncHandler(async (req, res, next) => {
+exports.comment_detail = asyncHandler(async (req, res) => {
   const comment = await Comment.findById(req.params.commentid)
     .populate("user")
     .exec();
@@ -34,7 +34,7 @@ exports.comment_detail = asyncHandler(async (req, res, next) => {
 });
 
 // Return a list of likes on a Comment with user details
-exports.comment_likes_list = asyncHandler(async (req, res, next) => {
+exports.comment_likes_list = asyncHandler(async (req, res) => {
   const comment = await Comment.findById(req.params.commentid)
     .populate("likes")
     .exec();
@@ -48,7 +48,7 @@ exports.comment_create_post = [
     .isLength({ min: 1, max: 100000 })
     .escape(),
   // Process request after validation and sanitization
-  asyncHandler(async (req, res, next) => {
+  asyncHandler(async (req, res) => {
     // Extract validation errors from request
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -71,7 +71,7 @@ exports.comment_create_post = [
 ];
 
 //Handle Comment image
-exports.comment_image_put = asyncHandler(async (req, res, next) => {
+exports.comment_image_put = asyncHandler(async (req, res) => {
   const comment = await Comment.findById(req.params.commentid).exec();
   try {
     const b64 = Buffer.from(req.file.buffer).toString("base64");
@@ -98,7 +98,7 @@ exports.comment_update_put = [
     .isLength({ min: 1, max: 100000 })
     .escape(),
   // Process request after validation and sanitization
-  asyncHandler(async (req, res, next) => {
+  asyncHandler(async (req, res) => {
     // Extract validation errors from request
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -122,7 +122,7 @@ exports.comment_update_put = [
 ];
 
 // Handle adding/removing Comment Like
-exports.comment_like_put = asyncHandler(async (req, res, next) => {
+exports.comment_like_put = asyncHandler(async (req, res) => {
   const comment = await Comment.findById(req.params.commentid).exec();
   if (comment.likes.includes(req.body.liked)) {
     const index = comment.likes.indexOf(req.body.liked);
@@ -155,7 +155,7 @@ exports.comment_like_put = asyncHandler(async (req, res, next) => {
 });
 
 // Handle Comment DELETE
-exports.comment_delete = asyncHandler(async (req, res, next) => {
+exports.comment_delete = asyncHandler(async (req, res) => {
   const comment = await Comment.findById(req.params.commentid).exec();
   if (comment === null) {
     res.json({ error: "Comment not found" });

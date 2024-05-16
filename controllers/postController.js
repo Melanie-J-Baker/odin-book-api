@@ -19,7 +19,7 @@ async function handleUpload(file) {
 }
 
 // Return a list of all Posts by a User
-exports.post_list = asyncHandler(async (req, res, next) => {
+exports.post_list = asyncHandler(async (req, res) => {
   const allPosts = await Post.find({ user: req.params.userid })
     .populate("user")
     .exec();
@@ -30,7 +30,7 @@ exports.post_list = asyncHandler(async (req, res, next) => {
 });
 
 // List of feed posts for a specific user
-exports.post_feed_get = asyncHandler(async (req, res, next) => {
+exports.post_feed_get = asyncHandler(async (req, res, next, err) => {
   const allFeedPosts = [];
   const user = await User.findById(req.params.userid)
     .populate("following")
@@ -62,13 +62,13 @@ exports.post_feed_get = asyncHandler(async (req, res, next) => {
 });
 
 // Send details for a specific Post
-exports.post_detail = asyncHandler(async (req, res, next) => {
+exports.post_detail = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.postid).populate("user").exec();
   res.json(post);
 });
 
 // Return a list of likes on a Post with user details
-exports.post_likes_list = asyncHandler(async (req, res, next) => {
+exports.post_likes_list = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.postid).populate("likes").exec();
   res.json({ post: req.params.postid, likes: post.likes });
 });
@@ -80,7 +80,7 @@ exports.post_create_post = [
     .isLength({ min: 1, max: 100000 })
     .escape(),
   // Process request after validation and sanitization
-  asyncHandler(async (req, res, next) => {
+  asyncHandler(async (req, res) => {
     // Extract validation errors from request
     const errors = validationResult(req.body);
     if (!errors.isEmpty()) {
@@ -108,7 +108,7 @@ exports.post_update_put = [
     .isLength({ min: 1, max: 100000 })
     .escape(),
   // Process request after validation and sanitization
-  asyncHandler(async (req, res, next) => {
+  asyncHandler(async (req, res) => {
     // Extract validation errors from request
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -130,7 +130,7 @@ exports.post_update_put = [
 ];
 
 //Handle Post image
-exports.post_image_put = asyncHandler(async (req, res, next) => {
+exports.post_image_put = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.postid).exec();
   try {
     const b64 = Buffer.from(req.file.buffer).toString("base64");
@@ -151,7 +151,7 @@ exports.post_image_put = asyncHandler(async (req, res, next) => {
 });
 
 // Handle adding/removing Post Like
-exports.post_like_put = asyncHandler(async (req, res, next) => {
+exports.post_like_put = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.postid).exec();
   if (post.likes.includes(req.body.likes)) {
     const index = post.likes.indexOf(req.body.likes);
@@ -184,7 +184,7 @@ exports.post_like_put = asyncHandler(async (req, res, next) => {
 });
 
 // Handle Post DELETE
-exports.post_delete = asyncHandler(async (req, res, next) => {
+exports.post_delete = asyncHandler(async (req, res) => {
   const post = await Post.findById(req.params.postid).exec();
   if (post === null) {
     res.json({ message: "Post not found" });
