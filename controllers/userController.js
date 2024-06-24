@@ -22,7 +22,7 @@ async function handleUpload(file) {
 }
 
 // Welcome page with counts of users, conversations and messages
-exports.index = asyncHandler(async (req, res) => {
+exports.index = asyncHandler(async (req, res, next) => {
   const [numUsers, numPosts, numComments] = await Promise.all([
     User.countDocuments({}).exec(),
     Post.countDocuments({}).exec(),
@@ -65,7 +65,7 @@ exports.user_signup_post = [
       throw new Error("Passwords do not match");
     }
   }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
     // Create User with validated and sanitised data
     if (!errors.isEmpty()) {
@@ -144,7 +144,7 @@ exports.user_logout_post = asyncHandler(async (req, res, next) => {
 });
 
 // Return a list of all Users
-exports.user_list = asyncHandler(async (req, res) => {
+exports.user_list = asyncHandler(async (req, res, next) => {
   const allUsers = await User.find(
     {},
     "username first_name last_name email following profile_image url name"
@@ -171,7 +171,7 @@ exports.user_detail = asyncHandler(async (req, res, next, err) => {
 });
 
 // Return list of users not followed by a specific User
-exports.user_addfriend_list = asyncHandler(async (req, res) => {
+exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   const allUsers = await User.find({}).sort({ username: 1 }).exec();
   const notFollowedUsers = allUsers.filter(function (user) {
@@ -199,7 +199,7 @@ exports.user_update_put = [
     .isLength({ min: 1, max: 100 })
     .escape(),
   body("email", "Email is required").trim().isLength({ min: 1 }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
     // Update User with validated and sanitised data
     if (!errors.isEmpty()) {
@@ -239,7 +239,7 @@ exports.user_update_put = [
 ];
 
 // Handle profile image
-exports.user_profileimage_put = asyncHandler(async (req, res) => {
+exports.user_profileimage_put = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.params.userid).exec();
   try {
     const b64 = Buffer.from(req.file.buffer).toString("base64");
@@ -276,7 +276,7 @@ exports.user_changepassword_put = [
       throw new Error("Passwords do not match");
     }
   }),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
     // Update User with validated and sanitised data
     if (!errors.isEmpty()) {
@@ -332,7 +332,7 @@ exports.user_followrequest_put = asyncHandler(async (req, res, next) => {
 });
 
 // Handle removing follow request
-exports.user_removerequest_put = asyncHandler(async (req, res) => {
+exports.user_removerequest_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   if (currentUser.requests.includes(req.body.removeid)) {
     const index = currentUser.requests.indexOf(req.body.removeid);
@@ -349,7 +349,7 @@ exports.user_removerequest_put = asyncHandler(async (req, res) => {
 });
 
 // Handle adding/removing follow
-exports.user_addfollow_put = asyncHandler(async (req, res) => {
+exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   if (currentUser.following.includes(req.body.toFollow)) {
     const index = currentUser.following.indexOf(req.body.toFollow);
@@ -386,7 +386,7 @@ exports.user_addfollow_put = asyncHandler(async (req, res) => {
 });
 
 // Handle User DELETE
-exports.user_delete = asyncHandler(async (req, res) => {
+exports.user_delete = asyncHandler(async (req, res, next) => {
   const [user, allPosts] = await Promise.all([
     User.findById(req.params.userid).exec(),
     Post.find({ user: req.params.userid }).exec(),
