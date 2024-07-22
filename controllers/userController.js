@@ -3,7 +3,6 @@ const Post = require("../models/post");
 const Comment = require("../models/comment");
 const asyncHandler = require("express-async-handler");
 const { body, validationResult } = require("express-validator");
-const bcrypt = require("bcryptjs");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const cloudinary = require("cloudinary").v2;
@@ -72,33 +71,26 @@ exports.user_signup_post = [
       res.json({ error: errors.array() });
       return;
     } else {
-      bcrypt.hash(req.body.password, 10, async (err, hashedPassword) => {
-        if (err) {
-          res.json({ error: err });
-          return;
-        } else {
-          const user = new User({
-            username: req.body.username,
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            email: req.body.email,
-            password: hashedPassword,
-            date_of_birth: req.body.date_of_birth,
-          });
-          const userExists = await User.findOne({
-            username: req.body.username,
-          }).exec();
-          if (userExists) {
-            res.json({ error: "Username already in use" });
-          } else {
-            await user.save();
-            res.json({
-              status: "Sign up successful",
-              user: user,
-            });
-          }
-        }
+      const user = new User({
+        username: req.body.username,
+        first_name: req.body.first_name,
+        last_name: req.body.last_name,
+        email: req.body.email,
+        password: req.body.password,
+        date_of_birth: req.body.date_of_birth,
       });
+      const userExists = await User.findOne({
+        username: req.body.username,
+      }).exec();
+      if (userExists) {
+        res.json({ error: "Username already in use" });
+      } else {
+        await user.save();
+        res.json({
+          status: "Sign up successful",
+          user: user,
+        });
+      }
     }
   }),
 ];
@@ -108,7 +100,7 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
   passport.authenticate("login", async (err, user, info) => {
     try {
       if (err || !user) {
-        const error = new Error("An error occurred");
+        const error = new Error(err);
         return next(error);
       }
       req.login(user, { session: false }, async (error) => {
@@ -286,21 +278,18 @@ exports.user_changepassword_put = [
       const user = await User.findById(req.params.userid);
       const validate = await user.isValidPassword(req.body.currentPassword);
       if (validate) {
-        bcrypt.hash(req.body.newPassword, 10, async (err, hashedPassword) => {
-          if (err) {
-            res.json({ message: err.message });
-            return;
-          } else {
-            const user = new User({
-              password: hashedPassword,
-              _id: req.params.userid, // Required to update user and not create
-            });
-            await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
-            res.json({
-              message: "Password changed successfully",
-              user: user,
-            });
-          }
+        const user = new User({
+          password: req.body.newPassword,
+          _id: req.params.userid, // Required to update user and not create
+        });
+        await User.findByIdAndUpdate(req.params.userid, user, {}).exec();
+        res.json({
+          message: "Password changed successfully",
+          user: user,
+        });
+      } else {
+        res.json({
+          message: "Wrong password",
         });
       }
     }
@@ -342,7 +331,7 @@ exports.user_removerequest_put = asyncHandler(async (req, res, next) => {
     await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
     return res.json({
       message: "Friend request removed",
-      user: req.body.remove,
+      user: req.body.removeid,
       newRequests: currentUser.requests,
     });
   }
@@ -351,24 +340,30 @@ exports.user_removerequest_put = asyncHandler(async (req, res, next) => {
 // Handle adding/removing follow
 exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
-  if (currentUser.following.includes(req.body.toFollow)) {
-    const index = currentUser.following.indexOf(req.body.toFollow);
+  const requestUser = await User.findById(req.body.requestUserId);
+  if (currentUser.following.includes(req.body.requestUserId)) {
+    const index = currentUser.following.indexOf(req.body.requestUserId);
     if (index !== -1) {
       currentUser.following.splice(index, 1);
     }
     await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
     return res.json({
       message: "Friend removed",
-      user: req.body.toFollow,
+      user: req.body.requestUserId,
       following: currentUser.following,
     });
   } else {
-    currentUser.following.push(req.body.toFollow);
-    const index = currentUser.requests.indexOf(req.body.toFollow);
+    requestUser.following.push(req.params.userid);
+    const index = currentUser.requests.indexOf(req.body.requestUserId);
     if (index !== -1) {
       currentUser.requests.splice(index, 1);
     }
     await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
+    await User.findByIdAndUpdate(
+      req.body.requestUserId,
+      requestUser,
+      {}
+    ).exec();
     const allUsers = await User.find({}).sort({ username: 1 }).exec();
     const notFollowedUsers = allUsers.filter(function (user) {
       return (
@@ -380,7 +375,7 @@ exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
       message: "Follow request successful",
       following: currentUser.following,
       notFollowing: notFollowedUsers,
-      user: req.body.toFollow,
+      user: req.body.requestUserId,
     });
   }
 });

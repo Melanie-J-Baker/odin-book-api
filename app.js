@@ -31,7 +31,9 @@ const limiter = RateLimit({
 
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
-const mongoDB = process.env.MONGODB_URI;
+const dev_db_url =
+  "mongodb+srv://bakermel:caP9amrjbeZRjU90@cluster0.gurhwin.mongodb.net/odin-book-api-dev?retryWrites=true&w=majority&appName=Cluster0";
+const mongoDB = process.env.MONGODB_URI || dev_db_url;
 main().catch((err) => console.log(err));
 async function main() {
   await mongoose.connect(mongoDB);
