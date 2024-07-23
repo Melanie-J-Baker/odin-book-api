@@ -2,7 +2,6 @@ const createError = require("http-errors");
 const session = require("express-session");
 const express = require("express");
 const path = require("path");
-//const apicache = require("apicache");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const compression = require("compression");
@@ -21,9 +20,6 @@ const odinBookRouter = require("./routes/odin-book");
 
 const app = express();
 
-//let cache = apicache.middleware;
-//app.use(cache("10 minutes")); // cache results for 10 mins
-
 // Set up rate limiter: max of 1000 reqs per min
 const limiter = RateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
@@ -32,9 +28,7 @@ const limiter = RateLimit({
 
 const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
-const dev_db_url =
-  "mongodb+srv://bakermel:caP9amrjbeZRjU90@cluster0.gurhwin.mongodb.net/odin-book-api-dev?retryWrites=true&w=majority&appName=Cluster0";
-const mongoDB = process.env.MONGODB_URI || dev_db_url;
+const mongoDB = process.env.MONGODB_URI;
 main().catch((err) => console.log(err));
 async function main() {
   await mongoose.connect(mongoDB);
