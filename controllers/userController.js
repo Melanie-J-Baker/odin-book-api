@@ -158,6 +158,7 @@ exports.user_detail = asyncHandler(async (req, res, next, err) => {
   }
   const posts = await Post.find({ user: req.params.userid })
     .populate("likes")
+    .sort({ timestamp: -1 })
     .exec();
   res.json({ user: user, posts: posts });
 });
@@ -382,9 +383,10 @@ exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
 
 // Handle User DELETE
 exports.user_delete = asyncHandler(async (req, res, next) => {
-  const [user, allPosts] = await Promise.all([
+  const [user, allPosts, allCommentsByUser] = await Promise.all([
     User.findById(req.params.userid).exec(),
     Post.find({ user: req.params.userid }).exec(),
+    Comment.find({ user: req.params.userid }).exec(),
   ]);
   const allCommentsOnPosts = allPosts.forEach(async (post) => {
     await Comment.find({ post: post._id }).exec();
@@ -400,11 +402,15 @@ exports.user_delete = asyncHandler(async (req, res, next) => {
       await Comment.deleteMany({ post: post._id }).exec();
     });
   }
+  if (allCommentsByUser) {
+    await Comment.deleteMany({ user: req.params.userid });
+  }
   await User.findByIdAndDelete(req.params.userid).exec();
   res.json({
     message: "User deleted",
     user: user,
     postsDeleted: allPosts,
-    commentsDeleted: allCommentsOnPosts,
+    postCommentsDeleted: allCommentsOnPosts,
+    commentsByUserDeleted: allCommentsByUser,
   });
 });

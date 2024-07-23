@@ -24,7 +24,7 @@ exports.post_list = asyncHandler(async (req, res, next) => {
     .populate("user")
     .exec();
   allPosts.sort((p1, p2) =>
-    p1.timestamp < p2.timestamp ? 1 : p1.timestamp > p2.timestamp ? -1 : 0
+    p1.timestamp > p2.timestamp ? 1 : p1.timestamp < p2.timestamp ? -1 : 0
   );
   res.json(allPosts);
 });
