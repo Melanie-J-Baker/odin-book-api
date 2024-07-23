@@ -2,6 +2,7 @@ const createError = require("http-errors");
 const session = require("express-session");
 const express = require("express");
 const path = require("path");
+//const apicache = require("apicache");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const compression = require("compression");
@@ -21,7 +22,7 @@ const odinBookRouter = require("./routes/odin-book");
 const app = express();
 
 //let cache = apicache.middleware;
-//app.use(cache("10 minutes")); // cache results for 5 mins
+//app.use(cache("10 minutes")); // cache results for 10 mins
 
 // Set up rate limiter: max of 1000 reqs per min
 const limiter = RateLimit({

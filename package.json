@@ -8,6 +8,7 @@
     "serverstart": "DEBUG=express-locallibrary-tutorial:* npm run devstart"
   },
   "dependencies": {
+    "apicache": "^1.6.3",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.1.0",
@@ -42,7 +43,12 @@
   },
   "eslintConfig": {
     "rules": {
-      "no-unused-vars": ["error", { "argsIgnorePattern": "next" }]
+      "no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "next"
+        }
+      ]
     }
   }
 }

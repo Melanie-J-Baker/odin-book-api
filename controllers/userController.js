@@ -347,17 +347,31 @@ exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
     if (index !== -1) {
       currentUser.following.splice(index, 1);
     }
+    const requestIndex = requestUser.following.indexOf(req.params.userid);
+    if (requestIndex !== -1) {
+      requestUser.following.splice(requestIndex, 1);
+    }
     await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
+    await User.findByIdAndUpdate(
+      req.body.requestUserId,
+      requestUser,
+      {}
+    ).exec();
     return res.json({
       message: "Friend removed",
       user: req.body.requestUserId,
       following: currentUser.following,
     });
   } else {
+    currentUser.following.push(req.body.requestUserId);
     requestUser.following.push(req.params.userid);
     const index = currentUser.requests.indexOf(req.body.requestUserId);
     if (index !== -1) {
       currentUser.requests.splice(index, 1);
+    }
+    const requestIndex = requestUser.requests.indexOf(req.params.userid);
+    if (requestIndex !== -1) {
+      requestUser.requests.splice(requestIndex, 1);
     }
     await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
     await User.findByIdAndUpdate(
