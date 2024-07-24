@@ -139,7 +139,7 @@ exports.user_logout_post = asyncHandler(async (req, res, next) => {
 exports.user_list = asyncHandler(async (req, res, next) => {
   const allUsers = await User.find(
     {},
-    "username first_name last_name email following profile_image url name"
+    "username first_name last_name email friends profile_image url name"
   )
     .sort({ username: 1 })
     .exec();
@@ -149,7 +149,7 @@ exports.user_list = asyncHandler(async (req, res, next) => {
 // Return details for a specific User
 exports.user_detail = asyncHandler(async (req, res, next, err) => {
   const user = await User.findById(req.params.userid)
-    .populate("following")
+    .populate("friends")
     .populate("requests")
     .exec();
   if (user === null) {
@@ -163,17 +163,17 @@ exports.user_detail = asyncHandler(async (req, res, next, err) => {
   res.json({ user: user, posts: posts });
 });
 
-// Return list of users not followed by a specific User
+// Return list of users not in friends array of a specific User
 exports.user_addfriend_list = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   const allUsers = await User.find({}).sort({ username: 1 }).exec();
-  const notFollowedUsers = allUsers.filter(function (user) {
+  const notFriends = allUsers.filter(function (user) {
     return (
-      user._id != req.params.userid && !currentUser.following.includes(user._id)
+      user._id != req.params.userid && !currentUser.friends.includes(user._id)
     );
   });
   res.json({
-    users: notFollowedUsers,
+    users: notFriends,
   });
 });
 
@@ -297,31 +297,31 @@ exports.user_changepassword_put = [
   }),
 ];
 
-// Handle send follow request
-exports.user_followrequest_put = asyncHandler(async (req, res, next) => {
+// Handle send friend request
+exports.user_friendrequest_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
-  const toFollowUser = await User.findById(req.body.toFollow).exec();
-  if (currentUser.following.includes(req.body.toFollow)) {
+  const toFriendUser = await User.findById(req.body.toFriend).exec();
+  if (currentUser.friends.includes(req.body.toFriend)) {
     return res.json({
-      message: "Already following user",
-      user: req.body.toFollow,
+      message: "Already friends with user",
+      user: req.body.toFriend,
     });
-  } else if (toFollowUser.requests.includes(req.params.userid)) {
+  } else if (toFriendUser.requests.includes(req.params.userid)) {
     return res.json({
-      message: "Follow request already sent",
-      user: req.body.toFollow,
+      message: "Friend request already sent",
+      user: req.body.toFriend,
     });
   } else {
-    toFollowUser.requests.push(currentUser);
-    await User.findByIdAndUpdate(req.body.toFollow, toFollowUser, {}).exec();
+    toFriendUser.requests.push(currentUser);
+    await User.findByIdAndUpdate(req.body.toFriend, toFriendUser, {}).exec();
     return res.json({
       message: "Friend request sent",
-      user: req.body.toFollow,
+      user: req.body.toFriend,
     });
   }
 });
 
-// Handle removing follow request
+// Handle removing friend request
 exports.user_removerequest_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   if (currentUser.requests.includes(req.body.removeid)) {
@@ -338,18 +338,18 @@ exports.user_removerequest_put = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Handle adding/removing follow
-exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
+// Handle adding/removing friend
+exports.user_addfriend_put = asyncHandler(async (req, res, next) => {
   const currentUser = await User.findById(req.params.userid).exec();
   const requestUser = await User.findById(req.body.requestUserId);
-  if (currentUser.following.includes(req.body.requestUserId)) {
-    const index = currentUser.following.indexOf(req.body.requestUserId);
+  if (currentUser.friends.includes(req.body.requestUserId)) {
+    const index = currentUser.friends.indexOf(req.body.requestUserId);
     if (index !== -1) {
-      currentUser.following.splice(index, 1);
+      currentUser.friends.splice(index, 1);
     }
-    const requestIndex = requestUser.following.indexOf(req.params.userid);
+    const requestIndex = requestUser.friends.indexOf(req.params.userid);
     if (requestIndex !== -1) {
-      requestUser.following.splice(requestIndex, 1);
+      requestUser.friends.splice(requestIndex, 1);
     }
     await User.findByIdAndUpdate(req.params.userid, currentUser, {}).exec();
     await User.findByIdAndUpdate(
@@ -360,11 +360,11 @@ exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
     return res.json({
       message: "Friend removed",
       user: req.body.requestUserId,
-      following: currentUser.following,
+      friends: currentUser.friends,
     });
   } else {
-    currentUser.following.push(req.body.requestUserId);
-    requestUser.following.push(req.params.userid);
+    currentUser.friends.push(req.body.requestUserId);
+    requestUser.friends.push(req.params.userid);
     const index = currentUser.requests.indexOf(req.body.requestUserId);
     if (index !== -1) {
       currentUser.requests.splice(index, 1);
@@ -380,16 +380,15 @@ exports.user_addfollow_put = asyncHandler(async (req, res, next) => {
       {}
     ).exec();
     const allUsers = await User.find({}).sort({ username: 1 }).exec();
-    const notFollowedUsers = allUsers.filter(function (user) {
+    const notFriendUsers = allUsers.filter(function (user) {
       return (
-        user._id != req.params.userid &&
-        !currentUser.following.includes(user._id)
+        user._id != req.params.userid && !currentUser.friends.includes(user._id)
       );
     });
     res.json({
-      message: "Follow request successful",
-      following: currentUser.following,
-      notFollowing: notFollowedUsers,
+      message: "Friend request successful",
+      friends: currentUser.friends,
+      notFriends: notFriendUsers,
       user: req.body.requestUserId,
     });
   }

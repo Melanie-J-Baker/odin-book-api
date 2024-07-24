@@ -40,7 +40,7 @@ router.get(
   user_controller.user_detail
 );
 
-// List of not followed users for a specific user
+// List of users that are not friends of a specific user
 router.get(
   "/users/:userid/userslist",
   passport.authenticate("jwt", { session: false }),
@@ -69,25 +69,25 @@ router.put(
   user_controller.user_changepassword_put
 );
 
-// Send follow request
+// Send friend request
 router.put(
-  "/users/:userid/followrequest",
+  "/users/:userid/friendrequest",
   passport.authenticate("jwt", { session: false }),
-  user_controller.user_followrequest_put
+  user_controller.user_friendrequest_put
 );
 
-// Remove follow request
+// Remove friend request
 router.put(
   "/users/:userid/removerequest",
   passport.authenticate("jwt", { session: false }),
   user_controller.user_removerequest_put
 );
 
-//Add user to following array
+//Add user to friends array
 router.put(
-  "/users/:userid/addfollow",
+  "/users/:userid/addfriend",
   passport.authenticate("jwt", { session: false }),
-  user_controller.user_addfollow_put
+  user_controller.user_addfriend_put
 );
 
 // Delete a user

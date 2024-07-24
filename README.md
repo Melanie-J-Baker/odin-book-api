@@ -8,7 +8,7 @@ The following requirements are a very global list of features the app was requir
 
 - Users must sign in to see anything except the sign-in page.
 - Users should be able to sign in using your chosen authentication method.
-- Users can send follow requests to other users.
+- Users can send friend requests to other users.
 - Users can create posts (begin with text only).
 - Users can like posts.
 - Users can comment on posts.
@@ -16,9 +16,10 @@ The following requirements are a very global list of features the app was requir
 - There should be an index page for posts, which shows all the recent posts from the current user and users they are following.
 - Users can create a profile with a profile picture.
 - A user’s profile page should contain their profile information, profile photo, and posts.
-- There should be an index page for users, which shows all users and buttons for sending follow requests to users the user is not already following or have a pending request.
+- There should be an index page for users, which shows all users and buttons for sending friend requests to users the user is not already following or have a pending request.
 
 Extra credit:
+
 - Make posts also allow images (Cloudinary was used for hosting user-uploaded images. The URLs Cloudinary provides are stored in database instead of the raw image binary data).
 - Allow users to update their profile photo.
 - Create a guest sign-in functionality that allows visitors to bypass the login screen without creating an account or supplying credentials

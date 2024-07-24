@@ -41,7 +41,7 @@ async function userCreate(
   last_name,
   email,
   password,
-  following,
+  friends,
   profile_image
 ) {
   const userdetail = {
@@ -50,7 +50,7 @@ async function userCreate(
     last_name: last_name,
     email: email,
     password: password,
-    following: following,
+    friends: friends,
     profile_image: profile_image,
   };
 

@@ -33,7 +33,7 @@ exports.post_list = asyncHandler(async (req, res, next) => {
 exports.post_feed_get = asyncHandler(async (req, res, next, err) => {
   const allFeedPosts = [];
   const user = await User.findById(req.params.userid)
-    .populate("following")
+    .populate("friends")
     .exec();
   if (user === null) {
     res.json({ error: "User not found" });
@@ -46,8 +46,8 @@ exports.post_feed_get = asyncHandler(async (req, res, next, err) => {
   allPostsByUser.forEach((post) => {
     allFeedPosts.push(post);
   });
-  for (const followedUserId of user.following) {
-    const feedPosts = await Post.find({ user: followedUserId })
+  for (const friendId of user.friends) {
+    const feedPosts = await Post.find({ user: friendId })
       .sort({ timestamp: -1 })
       .populate("user")
       .exec();

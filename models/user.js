@@ -13,7 +13,7 @@ const UserSchema = new Schema(
       type: [{ type: Schema.Types.ObjectId, ref: "User" }],
       required: false,
     },
-    following: {
+    friends: {
       type: [{ type: Schema.Types.ObjectId, ref: "User" }],
       required: false,
     },
