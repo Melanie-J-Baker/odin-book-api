@@ -2,7 +2,7 @@
   "name": "odin-book-api",
   "version": "0.0.0",
   "engines": {
-    "node": "18.x"
+    "node": "16.x"
   },
   "private": true,
   "scripts": {
