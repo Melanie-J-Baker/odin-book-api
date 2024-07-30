@@ -56,7 +56,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const corsOptions = {
-  origin: "https://melanie-j-baker.github.io/odin-book/",
+  origin: "https://melanie-j-baker.github.io",
   optionsSuccessStatus: 200,
   credentials: true,
 };
