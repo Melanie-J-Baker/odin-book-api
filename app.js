@@ -1,5 +1,5 @@
 const createError = require("http-errors");
-const session = require("express-session");
+//const session = require("express-session");
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -10,6 +10,7 @@ const helmet = require("helmet");
 const RateLimit = require("express-rate-limit");
 const dotenv = require("dotenv");
 const passport = require("passport");
+const cookieSession = require("cookie-session");
 require("./auth/auth");
 
 // get config vars
@@ -43,7 +44,7 @@ app.use(express.urlencoded({ extended: false, limit: "100mb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-const sessionConfig = {
+/*const sessionConfig = {
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
@@ -52,10 +53,18 @@ const sessionConfig = {
     maxAge: 1000 * 60 * 60 * 24 * 7,
     httpOnly: true,
   },
-};
+};*/
 
 app.set("trust proxy", 1); // trust first proxy
-app.use(session(sessionConfig));
+//app.use(session(sessionConfig));
+app.use(
+  cookieSession({
+    name: "session",
+    keys: [process.env.SESSION_SECRET],
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    httpOnly: true,
+  })
+);
 app.use(passport.initialize());
 app.use(passport.session());
 

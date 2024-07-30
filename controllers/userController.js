@@ -112,6 +112,11 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
         const token = jwt.sign({ user: body }, "TOP_SECRET", {
           expiresIn: "12h",
         });
+        // Create a session cookie
+        req.session = {
+          token: token,
+          user: user,
+        };
         return res.json({ token: token, user: user });
       });
     } catch (error) {
@@ -127,10 +132,7 @@ exports.user_logout_post = asyncHandler(async (req, res, next) => {
     if (err) {
       return next(err);
     }
-    req.session.destroy(function (err) {
-      // destroy the session
-      res.send(); // send to the client
-    });
+    req.session = null; // Clear cookie-session
     res.json({ message: "You are now logged out" });
   });
 });
