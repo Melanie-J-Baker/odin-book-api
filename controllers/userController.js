@@ -127,7 +127,6 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
 
 // Handle User logout on POST
 exports.user_logout_post = asyncHandler(async (req, res, next) => {
-  res.clearCookie("connect.sid"); // clear the session cookie
   req.logout((err) => {
     if (err) {
       return next(err);
