@@ -3,7 +3,7 @@
 Backend component of a social media site created as a final project piece as part of the Odin Project curriculum: https://www.theodinproject.com/lessons/nodejs-odin-book
 
 Try the Express API here: https://odin-book-express-api.glitch.me
-Try the React frontend I built that uses the Express API here:
+Try the React frontend I built that uses the Express API here: https://melanie-j-baker.github.io/odin-book/
 
 Social media app (with most of the core functionality of Facebook) was created using Express, MongoDB/Mongoose, React, passport-jwt, bcrypt and cloudinary (to handle image uploads). Core features of the chosen social media platform (Facebook) like users, profiles, posts, following, and “liking” are implemented. Authenticated using passportJS. Faker module from npm is used to populate the database with some default data like users, posts and comments (see populatedb.js).
 
