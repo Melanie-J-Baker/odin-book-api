@@ -17,7 +17,12 @@ const UserSchema = new Schema(
       type: [{ type: Schema.Types.ObjectId, ref: "User" }],
       required: false,
     },
-    profile_image: { type: String, required: false },
+    profile_image: {
+      type: String,
+      required: true,
+      default:
+        "https://res.cloudinary.com/domle6udr/image/upload/v1721838541/fh0jrskwmdubd7wxdcdz.jpg",
+    },
   },
   {
     toObject: { virtuals: true },
