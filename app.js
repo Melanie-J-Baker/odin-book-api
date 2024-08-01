@@ -72,8 +72,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 const corsOptions = {
-  //origin: "https://melanie-j-baker.github.io",
-  origin: "http://localhost:5173",
+  origin: "https://melanie-j-baker.github.io",
   optionsSuccessStatus: 200,
   credentials: true,
 };
