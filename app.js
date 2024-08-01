@@ -52,11 +52,28 @@ app.use(
     httpOnly: true,
   })
 );
+
+// Register regenerate & save after the cookieSession middleware initialization
+app.use(function (req, res, next) {
+  if (req.session && !req.session.regenerate) {
+    req.session.regenerate = (cb) => {
+      cb();
+    };
+  }
+  if (req.session && !req.session.save) {
+    req.session.save = (cb) => {
+      cb();
+    };
+  }
+  next();
+});
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 const corsOptions = {
-  origin: "https://melanie-j-baker.github.io",
+  //origin: "https://melanie-j-baker.github.io",
+  origin: "http://localhost:5173",
   optionsSuccessStatus: 200,
   credentials: true,
 };

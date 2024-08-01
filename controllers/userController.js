@@ -51,7 +51,7 @@ exports.user_signup_post = [
   body("email", "Email is required").trim().isLength({ min: 1 }),
   body(
     "password",
-    "Password must contain at least 8 characters (At least one uppercase letter, one lowercase letter and one number"
+    "Password must contain 8+ characters (1+ uppercase letter, 1+ lowercase letter and 1+ number)"
   )
     .trim()
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/)
@@ -77,7 +77,6 @@ exports.user_signup_post = [
         last_name: req.body.last_name,
         email: req.body.email,
         password: req.body.password,
-        date_of_birth: req.body.date_of_birth,
       });
       const userExists = await User.findOne({
         username: req.body.username,
@@ -100,7 +99,7 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
   passport.authenticate("login", async (err, user, info) => {
     try {
       if (err || !user) {
-        const error = new Error(err);
+        const error = new Error(err || info.message);
         return next(error);
       }
       req.login(user, { session: false }, async (error) => {
@@ -109,14 +108,12 @@ exports.user_login_post = asyncHandler(async (req, res, next) => {
           _id: user._id,
           username: user.username,
         };
-        const token = jwt.sign({ user: body }, "TOP_SECRET", {
+        const token = jwt.sign({ user: body }, process.env.JWT_SECRET, {
           expiresIn: "12h",
         });
         // Create a session cookie
-        req.session = {
-          token: token,
-          user: user,
-        };
+        req.session.token = token;
+        req.session.user = user;
         return res.json({ token: token, user: user });
       });
     } catch (error) {
