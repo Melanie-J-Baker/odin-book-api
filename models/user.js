@@ -21,7 +21,7 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       default:
-        "../assets/images/default.png",
+        "../../assets/images/default.jpg",
     },
   },
   {
