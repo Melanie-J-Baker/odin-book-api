@@ -21,7 +21,7 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       default:
-        "https://res.cloudinary.com/domle6udr/image/upload/v1721838541/fh0jrskwmdubd7wxdcdz.jpg",
+        "/assets/images/default.png",
     },
   },
   {
